@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Daily AI & ML Dispatch - Edition #01</title>
+  <style>
+    /* Reset & Base */
+    body, p, h1, h2, h3, h4 { margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f5f7;
+      color: #1e293b;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 16px 8px;
+    }
+    .email-container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    /* Header / Masthead */
+    .masthead {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 32px 24px 24px;
+      text-align: center;
+      border-bottom: 4px solid #3b82f6;
+    }
+    .masthead-label {
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .masthead-title {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+    .masthead-meta {
+      font-size: 13px;
+      color: #cbd5e1;
+      border-top: 1px solid #334155;
+      padding-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    
+    /* Content Padding */
+    .content {
+      padding: 24px 20px;
+    }
+    
+    /* Section Badges */
+    .section-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .badge-primary { background: #eff6ff; color: #1d4ed8; }
+    .badge-book { background: #fdf2f8; color: #be185d; }
+    .badge-dev { background: #f0fdf4; color: #15803d; }
+    .badge-prep { background: #faf5ff; color: #7e22ce; }
+    
+    /* Cards */
+    .news-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 24px;
+      transition: border-color 0.2s;
+    }
+    .news-card.featured {
+      border-left: 4px solid #2563eb;
+      background: #f8fafc;
+    }
+    .card-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.35;
+      margin-bottom: 10px;
+    }
+    .scan-time {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .summary-text {
+      font-size: 14.5px;
+      color: #334155;
+      margin-bottom: 14px;
+    }
+    
+    /* Takeaway Bullets */
+    .takeaways {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+    }
+    .takeaways-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .takeaways ul {
+      padding-left: 18px;
+      margin: 0;
+      font-size: 13.5px;
+      color: #334155;
+    }
+    .takeaways li {
+      margin-bottom: 5px;
+    }
+    
+    /* Links & Buttons */
+    .action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+    }
+    .read-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: none;
+    }
+    .read-link:hover {
+      text-decoration: underline;
+    }
+    .project-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      background: #e0e7ff;
+      color: #3730a3;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    
+    /* Footer */
+    .footer {
+      background: #f8fafc;
+      padding: 24px 20px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .footer a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    
+    /* Mobile Responsiveness */
+    @media only screen and (max-width: 600px) {
+      body { padding: 8px 4px; }
+      .masthead { padding: 24px 16px 18px; }
+      .masthead-title { font-size: 22px; }
+      .content { padding: 16px 12px; }
+      .news-card { padding: 16px; margin-bottom: 18px; }
+      .card-title { font-size: 17px; }
+      .summary-text { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="email-container">
+    <!-- Header -->
+    <div class="masthead">
+      <div class="masthead-label">Your Personalized Daily Dispatch</div>
+      <h1 class="masthead-title">The Daily AI & ML Chronicle</h1>
+      <div class="masthead-meta">
+        <span>📅 Sunday, November 22, 2026</span>
+        <span>⚡ Edition #01</span>
+        <span>⏱ 7-Minute Read Total</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+
+      <!-- SECTION 1: LEAD INDUSTRY STORY -->
+      <div class="news-card featured">
+        <span class="section-badge badge-primary">Big Tech & AI Leaders</span>
+        <h2 class="card-title">Nvidia Leadership Shakeup & The Rubin Architecture Launch</h2>
+        <div class="scan-time">⏱ 2-Min Scan • Verified Nov 2026 Developments</div>
+        <p class="summary-text">
+          In one of the most turbulent months for AI hardware leadership, longtime CEO Jensen Huang stepped down following board scrutiny over international intelligence exposure and export controls. Longstanding CFO Colette Kress has taken the helm as Interim CEO alongside new independent Board Chair Harvey C. Jones. Despite executive restructuring and an early SEC inquiry into accounting, Nvidia's data center revenue surged to $107.6B, alongside the announcement of the <strong>Rubin HPC</strong> platform packing over 50,000 CUDA cores and 7th-gen NVLink.
+        </p>
+        <div class="takeaways">
+          <div class="takeaways-title">💡 Why It Matters For You</div>
+          <ul>
+            <li><strong>Hardware Shift:</strong> The rollout of the DGX Spark developer kit allows running 120B models locally on desktop using NVFP4 quantization, reducing dependency on remote cloud GPU clusters.</li>
+            <li><strong>Supply Chain Realignment:</strong> Major packaging expansions with TSMC, Foxconn, and Amkor indicate no slowdown in hyperscale AI compute demand through 2027.</li>
+          </ul>
+        </div>
+        <div class="action-row">
+          <a href="https://nvidianews.nvidia.com" class="read-link">Read Official Nvidia SC26 Press Release →</a>
+          <span class="project-tag">Infrastructure & Hardware</span>
+        </div>
+      </div>
+
+      <!-- SECTION 2: INNOVATORS & BUILDERS -->
+      <div class="news-card">
+        <span class="section-badge badge-dev">Innovators Radar</span>
+        <h2 class="card-title">Spatial AI with Barehands & Agentic Learning Roadmaps</h2>
+        <div class="scan-time">⏱ 1.5-Min Scan • Developer Ecosystem</div>
+        <p class="summary-text">
+          On the builder front, Jared Rhodenizer’s open-source <strong>Barehands</strong> project is gaining major traction—enabling zero-headset spatial computing via webcams and mediapipe hand tracking to manipulate AI agent glass cards. Meanwhile, AI educator Aishwarya Srinivasan has launched her updated 6-month Agentic AI Engineering curriculum focused on deterministic orchestration (LangGraph) vs autonomous emergent behavior.
+        </p>
+        <div class="takeaways">
+          <div class="takeaways-title">💡 Project Connection</div>
+          <ul>
+            <li><strong>Virtual Try-On & Face Tracking:</strong> Barehands' lightweight client-side landmark tracking offers a blueprint for browser/mobile-based try-on outfit calibration.</li>
+            <li><strong>Agent Workflows:</strong> Practical patterns for structuring multi-agent handoffs with human-in-the-loop validation.</li>
+          </ul>
+        </div>
+        <div class="action-row">
+          <a href="https://github.com/jaredrhod/barehands" class="read-link">Explore Barehands Repository →</a>
+          <span class="project-tag">Projects: Try-on & Agents</span>
+        </div>
+      </div>
+
+      <!-- SECTION 3: FUNDAMENTALS REVISION - ARTICLE 1 -->
+      <div class="news-card">
+        <span class="section-badge badge-book">Book Revision • Chapter 1 (Part A)</span>
+        <h2 class="card-title">The ML Taxonomy: Supervised, Unsupervised & Self-Supervised</h2>
+        <div class="scan-time">⏱ 2-Min Scan • Aurélien Géron: Hands-On ML</div>
+        <p class="summary-text">
+          Machine Learning systems break down into four operational paradigms based on supervision type:
+        </p>
+        <div class="takeaways">
+          <div class="takeaways-title">📖 Core Fundamentals Breakdown</div>
+          <ul>
+            <li><strong>Supervised Learning:</strong> Target labels are fed to the model (Linear/Logistic Regression, Random Forests, Deep Neural Nets). Used when you have ground truth.</li>
+            <li><strong>Unsupervised Learning:</strong> Finding latent patterns without labels. Essential categories: <em>Clustering</em> (K-Means, DBSCAN), <em>Dimensionality Reduction</em> (PCA), and <em>Association Rule Mining</em>.</li>
+            <li><strong>Self-Supervised & Metric Learning:</strong> Pretext tasks (e.g. contrastive loss, triplet loss) creating feature vectors where similar items cluster together.</li>
+          </ul>
+        </div>
+        <div class="takeaways">
+          <div class="takeaways-title">🛠 Application to Your Upcoming Projects</div>
+          <ul>
+            <li><strong>Smart Gallery Cleaner App:</strong> Exact and near-duplicate images/videos are best solved with <em>Unsupervised Perceptual Hashing (dHash)</em> combined with <em>Self-Supervised Embeddings (e.g. CLIP / MobileNet)</em> and cosine similarity clustering.</li>
+            <li><strong>Face Recognition for Cashback/Auth:</strong> Uses Siamese networks or ArcFace (Metric learning) where distance \( d(f(x_1), f(x_2)) \) is minimized for identical individuals.</li>
+          </ul>
+        </div>
+        <div class="action-row">
+          <span style="font-size: 12px; color: #64748b;">Source: Hands-On ML (3rd Ed), Ch. 1, pp. 4–18</span>
+          <span class="project-tag">Project: Gallery Cleaner</span>
+        </div>
+      </div>
+
+      <!-- SECTION 4: FUNDAMENTALS REVISION - ARTICLE 2 -->
+      <div class="news-card">
+        <span class="section-badge badge-book">Book Revision • Chapter 1 (Part B)</span>
+        <h2 class="card-title">The 3 Classic ML Pitfalls: Overfitting, Underfitting & Data Mismatch</h2>
+        <div class="scan-time">⏱ 2-Min Scan • Interview Defense Knowledge</div>
+        <p class="summary-text">
+          When an ML model fails in production, it almost always stems from one of three core design problems. Interviewers frequently test this to see if you can debug real-world pipelines:
+        </p>
+        <div class="takeaways">
+          <div class="takeaways-title">⚠️ The Diagnosis Checklist</div>
+          <ul>
+            <li><strong>Overfitting (High Variance):</strong> The model learns noise in training data. <em>Fixes:</em> Simplify model (reduce parameters), Regularize (\(\ell_1, \ell_2\), Dropout), Gather more data, or clean labeling noise.</li>
+            <li><strong>Underfitting (High Bias):</strong> The model is too simple to capture relationships. <em>Fixes:</em> Select a more powerful model, engineer better features, reduce regularization.</li>
+            <li><strong>The "Data Mismatch" Trap (Crucial for Mobile Apps):</strong> Occurs when your training dataset distribution differs from real app user data (e.g. training your Gallery cleaner on clean web images, but users upload blurry phone photos under poor lighting). <em>Solution:</em> Keep a dedicated "train-dev" set drawn from the training distribution to isolate overfitting from true distribution shift.</li>
+          </ul>
+        </div>
+        <div class="action-row">
+          <span style="font-size: 12px; color: #64748b;">Source: Hands-On ML (3rd Ed), Ch. 1, pp. 24–36</span>
+          <span class="project-tag">Interview Question Gold</span>
+        </div>
+      </div>
+
+      <!-- SECTION 5: INTERVIEW HOMEWORK (LANGGRAPH & LANGCHAIN) -->
+      <div class="news-card">
+        <span class="section-badge badge-prep">Interview Homework • LangGraph</span>
+        <h2 class="card-title">LangChain vs. LangGraph: Why Cyclic State Machines Win</h2>
+        <div class="scan-time">⏱ 1.5-Min Scan • Daily Prep Task</div>
+        <p class="summary-text">
+          Standard LangChain pipelines use Directed Acyclic Graphs (DAGs) like `LCEL`, which are great for simple sequential steps (Prompt → Model → Output Parser). However, true autonomous agents require <strong>loops, conditional branching, and memory persistence</strong>.
+        </p>
+        <div class="takeaways">
+          <div class="takeaways-title">🎯 Interview Key Takeaways</div>
+          <ul>
+            <li><strong>State:</strong> A central schema (TypedDict or Pydantic) that tracks all messages, tool outputs, and execution variables across steps.</li>
+            <li><strong>Nodes & Edges:</strong> Nodes are Python functions that transform the State; Edges determine where execution routes next based on model tool calls or conditional checks.</li>
+            <li><strong>Human-in-the-Loop (Interrupts):</strong> LangGraph can pause execution before critical actions (e.g. payment processing or sending external messages) and resume once approved.</li>
+          </ul>
+        </div>
+        <div class="action-row">
+          <a href="https://langchain-ai.github.io/langgraph/" class="read-link">Read LangGraph StateGraph Docs →</a>
+          <span class="project-tag">Interview Topic</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>Delivered by <strong>Your Personal Daily News Brief Agent</strong></p>
+      <p style="margin-top: 6px;">Next edition: Chapter 2 of Géron (End-to-End ML Pipeline) + Latest AI Developments.</p>
+      <p style="margin-top: 8px; font-size: 11px; color: #94a3b8;">
+        Sent to savissudharshanambot@gmail.com • Customized for your laptop & mobile reading.
+      </p>
+    </div>
+  </div>
+
+</body>
+</html>
