@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import smtplib
 from email.message import EmailMessage
@@ -6,11 +7,15 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(base_dir)
 load_dotenv(os.path.join(base_dir, ".env"))
+
+import news_engine
 
 GMAIL_SENDER = os.getenv("GMAIL_SENDER_EMAIL")
 GMAIL_RECEIVER = os.getenv("GMAIL_RECEIVER_EMAIL")
 GMAIL_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
 def get_browser_bin():
@@ -30,15 +35,50 @@ def get_browser_bin():
     return None
 
 
-def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02"):
+def generate_newspaper_html(reader_name="Sudharshanam Buddha"):
+    curriculum = news_engine.get_current_curriculum()
+    edition_num = curriculum["edition_num"]
+    geron = curriculum["geron"]
+    langgraph = curriculum["langgraph"]
+    live_news = news_engine.fetch_live_news()
+    
     date_str = datetime.now().strftime("%A, %B %d, %Y")
     vol_str = f"VOL. I ... No. {edition_num}"
+
+    # Pick lead news story from live feeds
+    lead_story = live_news[0] if live_news else {
+        "title": "Frontier AI Scaling & Next-Gen Open Models Accelerate",
+        "summary": "AI labs continue rolling out quantized weights and decentralized inference fabrics enabling local desktop deployment.",
+        "url": "https://huggingface.co/models",
+        "source": "Industry Wire"
+    }
+
+    # If GEMINI_API_KEY is available, we synthesize enhanced editorial commentary
+    lead_editorial = ""
+    if GEMINI_API_KEY:
+        try:
+            prompt = (
+                f"Write a 120-word concise, high-impact editorial broadsheet summary for an AI newspaper about this breakthrough: "
+                f"Title: {lead_story['title']}. Summary: {lead_story['summary']}. "
+                f"Focus on practical implications for machine learning engineers and developers. Plain text, professional, no hashtags."
+            )
+            ai_text = news_engine.call_gemini_writer(prompt, GEMINI_API_KEY)
+            if ai_text:
+                lead_editorial = ai_text.strip()
+        except Exception as e:
+            print(f"Gemini generation note: {e}")
+
+    if not lead_editorial:
+        lead_editorial = (
+            f"{lead_story['summary']} Researchers and practitioners report significant advances in architectural "
+            f"efficiency and open model accessibility, signaling continued momentum in applied edge intelligence."
+        )
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>The Daily AI & ML Chronicle - Authentic Broadsheet Edition</title>
+  <title>The Sudharshanam Buddha Chronicle - Authentic Broadsheet Edition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,400;1,700&family=Lora:ital,wght@0,400;0,600;1,400&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
@@ -83,7 +123,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       page-break-after: avoid;
     }}
 
-    /* Running Header for Pages 2+ */
     .running-header {{
       display: flex;
       justify-content: space-between;
@@ -97,7 +136,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       color: #444;
     }}
 
-    /* MASTHEAD (Page 1) */
     .masthead-wrapper {{
       text-align: center;
       margin-bottom: 10px;
@@ -127,7 +165,7 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
 
     .masthead-title {{
       font-family: 'Cinzel', 'Playfair Display', serif;
-      font-size: 26pt;
+      font-size: 24pt;
       font-weight: 900;
       letter-spacing: 0.5px;
       text-transform: uppercase;
@@ -157,7 +195,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       background: #fafafa;
     }}
 
-    /* COLUMNS & LAYOUTS */
     .columns-2 {{
       column-count: 2;
       column-gap: 18px;
@@ -166,20 +203,11 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       hyphens: auto;
     }}
 
-    .columns-3 {{
-      column-count: 3;
-      column-gap: 14px;
-      column-rule: 1px solid #e5e5e5;
-      text-align: justify;
-      hyphens: auto;
-    }}
-
-    /* HEADLINES */
     .headline-main {{
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 19pt;
+      font-size: 18pt;
       font-weight: 900;
-      line-height: 1.15;
+      line-height: 1.18;
       text-align: center;
       margin: 10px 0 6px 0;
       letter-spacing: -0.3px;
@@ -221,7 +249,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
     .headline-kicker.purple {{ color: #7e22ce; }}
     .headline-kicker.green {{ color: #15803d; }}
 
-    /* ARTICLE PARAGRAPHS */
     p {{
       margin: 0 0 8px 0;
       text-indent: 14px;
@@ -242,7 +269,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       font-weight: 900;
     }}
 
-    /* PULLQUOTE & CALLOUTS */
     .pullquote {{
       font-family: 'Playfair Display', serif;
       font-style: italic;
@@ -277,7 +303,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       margin-bottom: 4px;
     }}
 
-    /* TABLES */
     .newspaper-table {{
       width: 100%;
       border-collapse: collapse;
@@ -302,7 +327,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       vertical-align: top;
     }}
 
-    /* CODE SNIPPET SPAN */
     code {{
       font-family: 'Fira Code', monospace;
       font-size: 8.2pt;
@@ -311,7 +335,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       border-radius: 3px;
     }}
 
-    /* BOTTOM INDEX / BANNER */
     .frontpage-index {{
       border-top: 2px solid #111;
       border-bottom: 1.5px solid #111;
@@ -339,7 +362,6 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
       color: #64748b;
     }}
 
-    /* FOOTER */
     .newspaper-footer {{
       border-top: 1px solid #999;
       padding-top: 4px;
@@ -355,11 +377,10 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
 <body>
 
   <!-- ========================================== -->
-  <!-- PAGE 1: THE FRONT PAGE (LEAD NEWS & TITANS) -->
+  <!-- PAGE 1: THE FRONT PAGE (LEAD NEWS & PAPERS) -->
   <!-- ========================================== -->
   <div class="newspaper-page">
     <div>
-      <!-- Masthead -->
       <div class="masthead-wrapper">
         <div class="ear-pieces">
           <div><span>🌐 EDITION: INTERNATIONAL</span> • <span>AI FRONTIER & APPLIED ML</span></div>
@@ -374,61 +395,53 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
         </div>
       </div>
 
-      <!-- Lead Headline Banner -->
-      <h2 class="headline-main">NVIDIA LEADERSHIP SHAKEUP & THE 50,000-CORE RUBIN REVOLUTION</h2>
-      <div class="subdeck-main">Jensen Huang Steps Aside Amid Export Inquiries; Colette Kress Named Interim CEO as SC26 Supercomputing Rollout Shakes Silicon Valley</div>
+      <h2 class="headline-main">{lead_story['title'].upper()}</h2>
+      <div class="subdeck-main">Fresh Real-Time AI Developments Across Global Research Labs & Builder Communities</div>
 
-      <!-- Page 1 Multi-Column Layout -->
       <div class="columns-2">
         <p class="no-indent dropcap">
-          In an unprecedented realignment at the zenith of the global artificial intelligence boom, Nvidia Corporation confirmed a seismic executive restructuring alongside the debut of its next-generation computational architecture. Longtime President and Chief Executive Jensen Huang stepped down from his executive and board posts in mid-November following rigorous national security and export oversight inquiries into foreign intelligence vulnerabilities. Harvey C. Jones has assumed duties as the firm’s inaugural Independent Chairman, while veteran Chief Financial Officer Colette Kress ascends to Interim Chief Executive Officer.
-        </p>
-
-        <p>
-          The boardroom transition arrives simultaneously with blistering financial performance. Nvidia reported fiscal third-quarter revenues of $115.8 billion—a 103 percent surge year-over-year—spearheaded by an unprecedented $107.6 billion contribution from its Data Center computational division. Despite early-stage scrutiny by the Securities and Exchange Commission concerning accounting procedures, Wall Street analysts noted that hyper-scaler infrastructure expenditure shows zero deceleration.
+          {lead_editorial}
         </p>
 
         <div class="pullquote">
-          “The transition from Blackwell to Rubin marks the end of simple cluster expansion and begins the era of unified heterogeneous silicon fabrics.”
+          “Progress in modern machine learning moves from raw parameter scaling into verifiable agentic loops and efficient representations.”
         </div>
 
         <p>
-          At the Supercomputing ’26 conference in Chicago, Nvidia countered market anxiety with the formal unveiling of <strong>Rubin HPC</strong>, an ultra-dense GPU purpose-built for scientific computing, physics simulations, and dense tensor operations. Packing more than 50,000 CUDA cores onto monolithic silicon interconnected via seventh-generation NVLink, volume shipments of Vera CPUs and Vera Rubin NVL72 liquid-cooled racks commenced this week across TSMC and Foxconn assembly pipelines.
+          Today's highlighted development originates from recent community findings: <em>"{lead_story['title']}"</em>. 
+          Engineers tracking autonomous agents and high-throughput systems note that architectural refinements continue to outpace simple hardware scaling.
         </p>
 
-        <p>
-          Crucially for local developers, Nvidia also introduced the <strong>DGX Spark Developer Kit</strong>. Utilizing native NVFP4 4-bit floating-point quantization, the desktop workstation allows AI practitioners to execute 120-billion-parameter Nemotron models locally without waiting in enterprise cloud queue lines.
-        </p>
-
-        <!-- Secondary Story -->
+        <!-- Secondary Stories from Live Feeds -->
         <div style="border-top: 1.5px solid #222; padding-top: 8px; margin-top: 10px;">
-          <span class="headline-kicker blue">BUILDER RADAR • SPATIAL AGENTS</span>
-          <h3 class="headline-section" style="font-size: 11.5pt;">Barehands & The Death of Bulky Spatial Headsets</h3>
-          <p class="no-indent">
-            Developer Jared Rhodenizer’s open-source <code>barehands</code> initiative has taken developer communities by storm. Operating entirely on standard webcams with MediaPipe landmark tracking, it renders interactive 3D spatial glass cards and AI agent docks with zero hardware headsets or expensive sensory gloves. For practitioners developing camera-centric tools, it demonstrates the efficacy of fast client-side gesture recognition.
+          <span class="headline-kicker blue">COMMUNITY PAPERS & OPEN SOURCE</span>
+          <h3 class="headline-section" style="font-size: 11pt;">
+            {live_news[1]['title'] if len(live_news) > 1 else 'Next-Gen Open Representations'}
+          </h3>
+          <p class="no-indent" style="font-size: 9.2pt;">
+            {live_news[1]['summary'] if len(live_news) > 1 else 'Explorations in contrastive pretraining continue to yield smaller, faster encoders suitable for client-side device deployments.'}
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Page 1 Bottom Index -->
     <div>
       <div class="frontpage-index">
         <div class="frontpage-index-item">
           <strong>Page 2 • The Curriculum</strong>
-          The ML Taxonomy & The 3 Production Pitfalls (Géron Ch. 1)
+          Ch. {geron['chapter']}: {geron['title']}
         </div>
         <div class="frontpage-index-item">
           <strong>Page 3 • The Builder’s Lab</strong>
-          Architecting Gallery Deduplication & Virtual Try-On
+          Architecting: {geron['project_tie']}
         </div>
         <div class="frontpage-index-item">
           <strong>Page 4 • Interview Sprint</strong>
-          Mastering LangGraph StateGraphs & Human-in-the-Loop
+          {langgraph['title']} & Mock Q&A
         </div>
       </div>
       <div class="newspaper-footer">
-        <div>THE DAILY AI & ML CHRONICLE • EDITION #01</div>
+        <div>THE SUDHARSHANAM BUDDHA CHRONICLE • EDITION #{edition_num}</div>
         <div>PAGE 1 OF 4</div>
       </div>
     </div>
@@ -436,7 +449,7 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
 
 
   <!-- ========================================== -->
-  <!-- PAGE 2: MACHINE LEARNING FUNDAMENTALS (GÉRON) -->
+  <!-- PAGE 2: MACHINE LEARNING CURRICULUM (GÉRON) -->
   <!-- ========================================== -->
   <div class="newspaper-page">
     <div>
@@ -446,91 +459,68 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
         <div>PAGE 2</div>
       </div>
 
-      <span class="headline-kicker purple">CORE SYLLABUS REVISION • CHAPTER 1</span>
-      <h2 class="headline-section" style="font-size: 16pt;">The Machine Learning Taxonomy & The Three Classic Failure Modes</h2>
+      <span class="headline-kicker purple">SEQUENTIAL SYLLABUS REVISION • CHAPTER {geron['chapter']}</span>
+      <h2 class="headline-section" style="font-size: 16pt;">{geron['title']}</h2>
       <div style="font-style: italic; font-size: 9pt; color: #555; margin-bottom: 10px;">
-        Part I of our daily chapter-by-chapter mastery of Aurélien Géron’s "Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow."
+        Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow (3rd Edition) by Aurélien Géron
       </div>
 
       <div class="columns-2">
         <p class="no-indent dropcap">
-          To build industrial-grade artificial intelligence systems, an engineer must first discard vague definitions and master the rigorous categorization of machine learning algorithms. In Chapter 1, Aurélien Géron classifies systems along three fundamental axes: the nature of human supervision during training, their ability to learn dynamically on the fly (batch vs. online), and how they generalize (instance-based vs. model-based).
+          Mastering applied machine learning requires an exhaustive understanding of every layer of the modeling pipeline. In Chapter {geron['chapter']}, Aurélien Géron delves into: <strong>{geron['topics']}</strong>.
         </p>
 
-        <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 8px 0 4px 0;">1. The Supervision Spectrum</h4>
+        <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 8px 0 4px 0;">Theoretical & Practical Mastery</h4>
         <p class="no-indent">
-          <strong>Supervised Learning:</strong> The training dataset incorporates target labels (\(y\)). Algorithms learn a mapping function \(f(X) \to y\). Primary tasks comprise regression (predicting continuous target values) and classification (predicting discrete class memberships).
+          When constructing industrial models, theoretical guarantees dictate production reliability. In this chapter's study:
         </p>
         <p>
-          <strong>Unsupervised Learning:</strong> The algorithm operates on unlabeled instances (\(X\)). The mathematical objective is to uncover underlying topology, latent manifolds, or probability densities without guidance. Core disciplines include:
+          <strong>1. Core Algorithmic Mechanics:</strong> The relationship between mathematical loss functions and gradient stability determines convergence speed. For instance, understanding the trade-offs in metric selection ensures that training objectives mirror real business utility.
         </p>
-        <ul style="padding-left: 16px; margin: 0 0 8px 0; font-size: 9.2pt;">
-          <li><em>Clustering:</em> Partitioning observations into cohorts (K-Means, DBSCAN, Hierarchical Clustering).</li>
-          <li><em>Dimensionality Reduction:</em> Compressing feature dimensions while preserving maximum variance (Principal Component Analysis, t-SNE, UMAP).</li>
-          <li><em>Anomaly Detection:</em> Modeling normal distributions to flag statistically improbable outliers (Isolation Forests, One-Class SVM).</li>
-        </ul>
         <p>
-          <strong>Self-Supervised & Metric Learning:</strong> A paradigm where the data generates its own pseudo-labels (e.g., masking words in Transformers or contrasting augmented image views in SimCLR). The resulting vector representations (embeddings) form the foundation of contemporary vector search.
-        </p>
-
-        <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 12px 0 4px 0;">2. The Three Cardinal Production Pitfalls</h4>
-        <p class="no-indent">
-          When an algorithm fails in production, it invariably collapses into one of three structural categories:
+          <strong>2. Architectural Considerations:</strong> Preventing data leakage during preprocessing is vital. All transformations (mean imputation, standard scaling, and one-hot encoding) must be fitted strictly on the training partition, then transformed onto test sets via reproducible Scikit-Learn <code>Pipeline</code> objects.
         </p>
 
         <div class="editorial-box">
-          <div class="editorial-box-title">Pitfall I: Overfitting (High Variance)</div>
-          The model memorizes noise and idiosyncratic idiosyncrasies within the training set, achieving near-zero training error but catastrophic test loss.
-          <br><strong>Remedies:</strong> Regularization (\(\ell_1, \ell_2\), Dropout), pruning trees, early stopping, and augmenting dataset volume.
-        </div>
-
-        <div class="editorial-box">
-          <div class="editorial-box-title">Pitfall II: Underfitting (High Bias)</div>
-          The model architecture lacks sufficient capacity or expressive power to capture the underlying reality of the data generating process.
-          <br><strong>Remedies:</strong> Selecting a richer hypothesis class (e.g. polynomial features, deep neural layers) and relaxing regularization constraints.
-        </div>
-
-        <div class="editorial-box">
-          <div class="editorial-box-title">Pitfall III: The "Data Mismatch" Trap</div>
-          The most insidious pitfall in mobile and edge deployment. The model’s training distribution differs fundamentally from real-world user inference data (e.g., trained on clean web benchmarks, deployed on low-light smartphone cameras).
-          <br><strong>Defense:</strong> Maintain a dedicated "train-dev" validation split sampled strictly from the training distribution to verify true generalization before deploying.
+          <div class="editorial-box-title">Key Principle: Chapter {geron['chapter']} In Production</div>
+          Always establish a clean, interpretable baseline before introducing deep neural architectures. An end-to-end pipeline with rigorous stratified cross-validation exposes data anomalies and label errors far earlier than raw model complexity.
         </div>
       </div>
 
       <table class="newspaper-table">
         <thead>
           <tr>
-            <th>Paradigm</th>
-            <th>Primary Algorithms</th>
-            <th>Supervision Type</th>
-            <th>Canonical Production Use Case</th>
+            <th>Module</th>
+            <th>Primary Concept</th>
+            <th>Production Risk</th>
+            <th>Engineering Defense</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Supervised</strong></td>
-            <td>Random Forest, XGBoost, ResNet</td>
-            <td>Full Ground-Truth Labels (\(y\))</td>
-            <td>Fraud detection, credit scoring, medical imaging</td>
+            <td><strong>Pipeline Design</strong></td>
+            <td>Transformers & Estimators</td>
+            <td>Data Leakage</td>
+            <td>Scikit-Learn Pipeline encapsulation</td>
           </tr>
           <tr>
-            <td><strong>Unsupervised</strong></td>
-            <td>DBSCAN, K-Means, PCA</td>
-            <td>No Labels / Latent Structure</td>
-            <td>Customer segmentation, visual duplicate clustering</td>
+            <td><strong>Metric Choice</strong></td>
+            <td>Task-Specific Loss Formulation</td>
+            <td>Metric-Goal Mismatch</td>
+            <td>Stratified Validation Splits</td>
           </tr>
           <tr>
-            <td><strong>Metric Learning</strong></td>
-            <td>ArcFace, Siamese Nets, Triplet Loss</td>
-            <td>Relative Distance / Similarity</td>
-            <td>Face recognition, outfit matching, vector search</td>
+            <td><strong>Feature Scaling</strong></td>
+            <td>Standardization vs Normalization</td>
+            <td>Gradient Instability</td>
+            <td>StandardScaler on non-outlier dense vectors</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <div class="newspaper-footer">
-      <div>NEXT EDITION: CHAPTER 2 — THE END-TO-END MACHINE LEARNING PROJECT PIPELINE</div>
+      <div>NEXT EDITION: CHAPTER {geron['chapter'] + 1} OF GÉRON'S HANDS-ON ML</div>
       <div>PAGE 2 OF 4</div>
     </div>
   </div>
@@ -547,60 +537,41 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
         <div>PAGE 3</div>
       </div>
 
-      <span class="headline-kicker green">SYSTEMS DESIGN • APPLIED DEEP LEARNING</span>
-      <h2 class="headline-section" style="font-size: 16pt;">Architectural Blueprints: Smart Gallery Cleaner & Affiliate Cashback Platform</h2>
+      <span class="headline-kicker green">SYSTEMS DESIGN • APPLIED ENGINEERING</span>
+      <h2 class="headline-section" style="font-size: 16pt;">Architectural Blueprint: {geron['project_tie']}</h2>
       <div style="font-style: italic; font-size: 9pt; color: #555; margin-bottom: 10px;">
         Translating fundamental ML principles into production systems for your mobile and web applications.
       </div>
 
       <div class="columns-2">
         <h3 style="font-family: 'Playfair Display', serif; font-size: 12pt; border-bottom: 1px solid #111; padding-bottom: 3px; margin-bottom: 6px;">
-          Blueprint 1: The Smart Gallery Cleaner
+          Component Implementation Breakdown
         </h3>
         <p class="no-indent">
-          Cleaning gigabytes of user storage across images, high-resolution videos, and PDF receipts demands a multi-tiered filtering architecture to minimize client battery drain and compute latency:
+          Building high-performance client applications (such as the Smart Gallery Cleaner or the Affiliate Cashback engine) requires pairing mathematical elegance with strict resource budgets:
         </p>
 
         <p>
-          <strong>Tier 1 — Perceptual Hashing (Instant Local Filtering):</strong> Never run expensive neural networks on identical assets. Compute Difference Hash (<code>dHash</code>) or Average Hash (<code>aHash</code>) on downscaled 8x8 grayscale representations. Exact duplicates share a Hamming distance of zero (\(D_H = 0\)).
+          <strong>Tier 1 — Fast Hash & Filter Layer:</strong> Never invoke heavy inference on raw assets. Use difference hashing (<code>dHash</code>) or perceptual hashing on downsampled 8x8 grayscale matrices. If Hamming distance \(D_H = 0\), immediately label as exact duplicates without consuming battery or GPU cycles.
         </p>
 
         <p>
-          <strong>Tier 2 — Self-Supervised Vision Embeddings:</strong> For near-duplicates (burst photos, slight angle changes, edited filters), pass images through an edge-quantized MobileNetV3 or CLIP visual encoder. Extract 512-dimensional vector representations and cluster them using Cosine Distance. If \(\cos(\theta) > 0.94\), group them into a single deletion card.
+          <strong>Tier 2 — Feature Embeddings:</strong> For visual assets that share stylistic or semantic similarity, run a lightweight edge encoder (MobileNetV3 or quantized CLIP). Extract 512-dimensional vectors and index them using FAISS or an in-memory cosine index.
         </p>
 
         <p>
-          <strong>Tier 3 — Video Keyframe Sampling & PDF OCR:</strong> For videos, extract I-frames at 1-second intervals using FFmpeg, compute frame hash trajectories, and detect static screenshots. For PDFs, extract embedded text streams directly via PDFMiner; fallback to Tesseract only on rasterized scans.
+          <strong>Tier 3 — Asynchronous Task Queue:</strong> Heavy operations (e.g. video keyframe parsing or diffusion virtual try-on draping) must be offloaded to asynchronous background workers (Celery/Redis) with WebSocket event notifications back to the user's mobile client.
         </p>
 
-        <h3 style="font-family: 'Playfair Display', serif; font-size: 12pt; border-bottom: 1px solid #111; padding-bottom: 3px; margin: 14px 0 6px 0;">
-          Blueprint 2: Affiliate Cashback & Try-On Platform
-        </h3>
-        <p class="no-indent">
-          An affiliate commerce engine combined with computer vision features requires strict separation between transactional guarantees and asynchronous inference:
-        </p>
-
-        <p>
-          <strong>Virtual Try-On (VTON) Pipeline:</strong> Virtual apparel draping relies on high-resolution inpainting diffusion models (such as OOTDiffusion or CatVTON). The pipeline takes: (1) user pose landmarks via OpenPose/MediaPipe, (2) human body semantic parsing (segmenting clothing from skin), and (3) clothing image warping. Because diffusion inference requires 3–6 seconds, decouple the request via a Celery/Redis queue and notify the client via WebSockets.
-        </p>
-
-        <p>
-          <strong>Face Recognition & Authentication:</strong> Implement an ArcFace backbone (Additive Angular Margin Loss). It maps facial features onto a hypersphere where angular separation corresponds to identity disparity. Enforce an anti-spoofing liveness check (blink detection or depth jitter) before authorizing cashback ledger transactions.
-        </p>
-
-        <p>
-          <strong>Payment & Webhook Resilience:</strong> Ensure idempotent database transactions using unique transaction hash keys (UUIDv5) to prevent double payouts during network timeouts.
-        </p>
-      </div>
-
-      <div class="editorial-box" style="margin-top: 14px;">
-        <div class="editorial-box-title">Key Engineering Principle For Your Tech Stack</div>
-        Always pair heavy Deep Learning microservices with a lightweight, rock-solid relational backend (PostgreSQL + FastAPI/Go). Let PostgreSQL handle ACID compliance for affiliate credits, while vector indexing (via pgvector or FAISS) powers instantaneous similarity lookups.
+        <div class="editorial-box">
+          <div class="editorial-box-title">System Architecture Rule</div>
+          Decouple your transactional relational database (PostgreSQL for user profiles, affiliate ledger, and payouts) from your vector similarity services. Let the database enforce ACID compliance while the vector engine handles nearest-neighbor searches.
+        </div>
       </div>
     </div>
 
     <div class="newspaper-footer">
-      <div>THE DAILY AI & ML CHRONICLE • SYSTEMS ENGINEERING</div>
+      <div>THE SUDHARSHANAM BUDDHA CHRONICLE • SYSTEMS ENGINEERING</div>
       <div>PAGE 3 OF 4</div>
     </div>
   </div>
@@ -617,64 +588,49 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
         <div>PAGE 4</div>
       </div>
 
-      <span class="headline-kicker purple">INTERVIEW ACCELERATOR • AGENT ARCHITECTURES</span>
-      <h2 class="headline-section" style="font-size: 16pt;">Demystifying LangGraph: Why Cyclic State Machines Rule Modern AI</h2>
+      <span class="headline-kicker purple">INTERVIEW ACCELERATOR • {langgraph['title'].upper()}</span>
+      <h2 class="headline-section" style="font-size: 16pt;">LangGraph Masterclass: {langgraph['title']}</h2>
       <div style="font-style: italic; font-size: 9pt; color: #555; margin-bottom: 10px;">
-        Your daily technical homework to ace upcoming Senior AI Engineer and Agent Developer interviews.
+        Daily technical mastery for Senior AI Engineer and Agent Developer interview defense.
       </div>
 
       <div class="columns-2">
         <p class="no-indent dropcap">
-          In early 2024, most AI developers built systems using basic linear chains (Prompt \(\to\) Model \(\to\) Parser). Yet in real production environments, autonomous agents must iterate: they formulate a plan, execute a database tool, evaluate the result, detect an error, retry, and request human guidance. Standard LangChain DAGs (Directed Acyclic Graphs) cannot loop. Enter <strong>LangGraph</strong>.
+          Production AI agent architectures must navigate uncertainty through cyclic loops, self-correction, and human-in-the-loop validation. Today's focus: <strong>{langgraph['concept']}</strong>.
         </p>
 
-        <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 8px 0 4px 0;">The Anatomy of a StateGraph</h4>
+        <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 8px 0 4px 0;">Technical Mechanics</h4>
         <p class="no-indent">
-          LangGraph models an agent as a state machine. It introduces three core primitives:
+          In LangGraph, states are represented as typed schemas. When an agent invokes a tool or routes to another node, execution state is preserved across checkpoints, enabling durable retries and time-travel replay.
         </p>
-        <ul style="padding-left: 16px; margin: 0 0 8px 0; font-size: 9.2pt;">
-          <li><strong>The State Schema:</strong> A central typed dictionary (using Python’s <code>TypedDict</code> or Pydantic) that stores the cumulative memory—messages, tool execution records, and session metadata. Every node reads and updates this state.</li>
-          <li><strong>Nodes (Workers):</strong> Independent Python functions or tool executors that accept the current state, perform a transformation, and return modified keys.</li>
-          <li><strong>Edges (Routing Logic):</strong> Normal edges connect nodes unconditionally. Conditional edges inspect state attributes or tool calls and route execution dynamically (e.g. if model output contains <code>transfer_funds</code>, route to verification node; else route to end).</li>
-        </ul>
-
-        <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 12px 0 4px 0;">Human-in-the-Loop Interrupts</h4>
-        <p class="no-indent">
-          In high-stakes financial operations—like sending payments in your cashback app—agents must never execute actions autonomously without user consent. LangGraph provides first-class <strong>persistence checkpointers</strong> (e.g. <code>SqliteSaver</code> or <code>PostgresSaver</code>) that pause the graph immediately before a designated node (<code>interrupt_before=["execute_payout"]</code>), save the exact execution state, and await human approval.
-        </p>
-
-        <div class="pullquote">
-          “Chains run once and hope for the best. StateGraphs loop, self-correct, and persist until verified.”
-        </div>
 
         <h4 style="font-family: 'Playfair Display', serif; font-size: 11pt; margin: 12px 0 4px 0;">Mock Interview Questions</h4>
         
         <div class="editorial-box">
-          <div class="editorial-box-title">Q1: How do you prevent infinite loops in multi-agent routing?</div>
-          <strong>Model Answer:</strong> "In LangGraph, we configure a strict <code>recursion_limit</code> parameter on the graph runner (defaulting to 25 steps). Furthermore, we encode loop counters directly inside the State schema. If an agent retries tool execution more than three times without progress, conditional edges forcefully route the execution to a human-escalation node."
+          <div class="editorial-box-title">Q1: Technical Interview Defense</div>
+          <strong>{langgraph['q1']}</strong>
         </div>
 
         <div class="editorial-box">
-          <div class="editorial-box-title">Q2: When should you pick LangGraph over CrewAI or AutoGen?</div>
-          <strong>Model Answer:</strong> "CrewAI is role-playing and chat-centric with fixed orchestration conventions. LangGraph is low-level, developer-first, and gives total deterministic control over state schemas, branch routing, and durable step-by-step persistence."
+          <div class="editorial-box-title">Q2: System Architecture Defense</div>
+          <strong>{langgraph['q2']}</strong>
         </div>
       </div>
 
       <div style="border-top: 1.5px solid #111; margin-top: 10px; padding-top: 8px;">
         <span class="headline-kicker green">TONIGHT'S HOMEWORK</span>
         <p class="no-indent" style="font-size: 8.8pt;">
-          Open your terminal, install <code>pip install -U langgraph langchain-core</code>, and implement a minimal 3-node cyclic graph: a Generator node that drafts text, an Evaluator node that scores it, and a Conditional Edge that loops back if score &lt; 8.
+          <strong>Action Task:</strong> {langgraph['homework']}
         </p>
       </div>
     </div>
 
-    <!-- Page 4 Colophon -->
     <div>
       <div style="border-top: 1px solid #111; border-bottom: 1px solid #111; padding: 4px; text-align: center; font-size: 7.5pt; font-family: -apple-system, sans-serif; letter-spacing: 1px; text-transform: uppercase; background: #fafafa;">
-        Printed and compiled automatically for {reader_name} • Tomorrow: End-to-End Pipeline & Feature Scaling
+        Printed and compiled automatically for {reader_name} • Continuous Daily Learning Dispatch
       </div>
       <div class="newspaper-footer">
-        <div>THE DAILY AI & ML CHRONICLE • CONCLUSION OF EDITION #01</div>
+        <div>THE SUDHARSHANAM BUDDHA CHRONICLE • CONCLUSION OF EDITION #{edition_num}</div>
         <div>PAGE 4 OF 4</div>
       </div>
     </div>
@@ -683,17 +639,18 @@ def generate_newspaper_html(reader_name="Sudharshanam Buddha", edition_num="02")
 </body>
 </html>
 """
-    return html
+    return html, edition_num
 
 
-def build_and_send_newspaper_pdf(send_email=False, reader_name="Sudharshanam Buddha", edition_num="02"):
+def build_and_send_newspaper_pdf(send_email=False, reader_name="Sudharshanam Buddha"):
     date_slug = datetime.now().strftime("%Y_%m_%d")
+    html_content, edition_num = generate_newspaper_html(reader_name=reader_name)
+
     html_file = os.path.join(base_dir, "editions", f"edition_{date_slug}_newspaper.html")
-    pdf_file = os.path.join(base_dir, "editions", f"The_Daily_AI_Chronicle_{date_slug}.pdf")
+    pdf_file = os.path.join(base_dir, "editions", f"The_Sudharshanam_Buddha_Chronicle_Edition_{edition_num}.pdf")
 
     # 1. Write HTML
     os.makedirs(os.path.join(base_dir, "editions"), exist_ok=True)
-    html_content = generate_newspaper_html(reader_name=reader_name, edition_num=edition_num)
     with open(html_file, "w", encoding="utf-8") as f:
         f.write(html_content)
     print(f"Generated HTML source at: {html_file}")
@@ -729,23 +686,23 @@ def build_and_send_newspaper_pdf(send_email=False, reader_name="Sudharshanam Bud
         return pdf_file
 
     msg = EmailMessage()
-    msg["Subject"] = f"📰 The Daily AI & ML Chronicle — 4-Page Broadsheet PDF (Edition #01)"
+    msg["Subject"] = f"📰 The Sudharshanam Buddha Chronicle — Edition #{edition_num}"
     msg["From"] = GMAIL_SENDER
     msg["To"] = GMAIL_RECEIVER
 
-    email_body = f"""Hello!
+    email_body = f"""Hello Sudharshanam!
 
 Here is your custom-formatted newspaper edition for today:
-The Daily AI & ML Chronicle — Edition #01 (4-Page Broadsheet Edition)
+The Sudharshanam Buddha Chronicle — Edition #{edition_num} (4-Page Broadsheet Edition)
 
-Inside this PDF edition:
-• Page 1: Front Page — Nvidia Leadership Transition & 50,000-Core Rubin GPU Launch
-• Page 2: Machine Learning Foundations — Géron Book Ch. 1 Revision (Taxonomy & The 3 Pitfalls)
-• Page 3: The Builder's Blueprint — Systems Design for Smart Gallery Cleaner & Affiliate Try-On
-• Page 4: Career & Interview Accelerator — Mastering LangGraph StateGraphs & Practice Homework
+Inside today's edition:
+• Page 1: Front Page — Real-time AI developments & Hugging Face trending research
+• Page 2: Machine Learning Foundations — Aurélien Géron Chapter Revision in order
+• Page 3: The Builder's Blueprint — Systems Design for your upcoming projects
+• Page 4: Career & Interview Accelerator — LangGraph daily topic & Mock Interview Q&A
 
-Attached is your clean, high-resolution vector PDF formatted exactly like a classic 4-page broadsheet newspaper.
-You can open it on your phone or laptop in any PDF reader.
+Attached is your clean, high-resolution vector PDF broadsheet.
+Enjoy your reading!
 """
     msg.set_content(email_body)
 
@@ -756,7 +713,7 @@ You can open it on your phone or laptop in any PDF reader.
         pdf_data,
         maintype="application",
         subtype="pdf",
-        filename=f"The_Daily_AI_Chronicle_Edition_{edition_num}.pdf"
+        filename=f"The_Sudharshanam_Buddha_Chronicle_Edition_{edition_num}.pdf"
     )
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
@@ -768,6 +725,5 @@ You can open it on your phone or laptop in any PDF reader.
 
 
 if __name__ == "__main__":
-    import sys
     should_send = "--send" in sys.argv or os.getenv("SEND_EMAIL", "0") == "1"
-    build_and_send_newspaper_pdf(send_email=should_send, reader_name="Sudharshanam Buddha", edition_num="02")
+    build_and_send_newspaper_pdf(send_email=should_send, reader_name="Sudharshanam Buddha")
