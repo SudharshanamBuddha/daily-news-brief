@@ -2,8 +2,8 @@ name: Daily Morning AI & ML Brief
 
 on:
   schedule:
-    # 02:30 UTC corresponds exactly to 08:00 AM IST (UTC + 5:30)
-    - cron: '30 2 * * *'
+    # 02:28 UTC corresponds to 07:58 AM IST (off-peak minute prevents GitHub queue delays)
+    - cron: '28 2 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI / Mobile app anytime
 
 jobs:
