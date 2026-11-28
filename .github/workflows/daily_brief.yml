@@ -2,9 +2,12 @@ name: Daily Morning AI & ML Brief
 
 on:
   schedule:
-    # 02:28 UTC corresponds to 07:58 AM IST (off-peak minute prevents GitHub queue delays)
-    - cron: '28 2 * * *'
+    # GitHub's free runner queue has an ~8.5 hour backlog delay during peak hours.
+    # Scheduled at 18:00 UTC (11:30 PM IST), GitHub's queue clears it to arrive by ~07:30 - 08:00 AM IST!
+    - cron: '0 18 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub UI / Mobile app anytime
+  repository_dispatch: # Allows instant, 0-second-delay triggers from free external cron (e.g. cron-job.org)
+    types: [daily_brief]
 
 jobs:
   dispatch_newsletter:
